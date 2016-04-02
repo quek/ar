@@ -1,0 +1,16 @@
+[package]
+name = "ar"
+version = "0.1.0"
+authors = ["TAHARA Yoshinori <read.eval.print@gmail.com>"]
+
+[lib]
+name = "ar"
+plugin = true
+
+[dependencies]
+mysql = "*"
+aster = "*"
+
+[[test]]
+name = "test"
+path = "tests/test.rs"
