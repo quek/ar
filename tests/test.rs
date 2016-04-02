@@ -4,20 +4,28 @@
 
 #[derive(Ar, Debug)]
 struct Foo {
-    id: u64,
-    name: String,
+    yid: u64,
+    yname: String,
 }
 
+
+ar!{ Region }
 
 #[test]
 fn main() {
     let foo = Foo {
-        id: 0,
-        name: "ねこねこ".to_string(),
+        yid: 0,
+        yname: "ねこねこ".to_string(),
     };
     println!("ok -> {:?}", foo);
     foo.f1();
 
     let bar = Bar { id: 123 };
     println!("bar -> {}", bar.id);
+
+    let region = Region {
+        id: 777,
+        name: "Hello".to_string(),
+    };
+    println!("region -> {:?}", region);
 }
