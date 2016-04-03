@@ -26,6 +26,9 @@ fn main() {
     let region = Region {
         id: 777,
         name: "Hello".to_string(),
+        reading: "".to_string(),
+        roman: "".to_string(),
+        prefecture_id: 1,
     };
     println!("region -> {:?}", region);
 }

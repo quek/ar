@@ -6,7 +6,6 @@ use syntax::ptr::P;
 use aster;
 
 use err::Error;
-use naming;
 
 pub fn ar(cx: &mut ExtCtxt,
           span: Span,
@@ -52,13 +51,10 @@ pub fn ar(cx: &mut ExtCtxt,
 
 fn make_item(cx: &ExtCtxt,
              builder: &aster::AstBuilder,
-             item: &Item)
+             _item: &Item)
              -> Result<P<ast::Item>, Error> {
 
-    println!("item -> {:?}", item);
-    let struct_name = item.ident.name.as_str();
-    let table_name = naming::table_name(&*struct_name);
-    println!("table_name -> {:?}", table_name);
+    // println!("item -> {:?}", item);
 
     let fname = builder.id("f1");
 

@@ -7,6 +7,7 @@ extern crate rustc_plugin;
 use rustc_plugin::Registry;
 
 mod err;
+mod db;
 mod mcr;
 mod drv;
 mod naming;

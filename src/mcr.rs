@@ -5,6 +5,9 @@ use syntax::parse::token;
 use syntax::util::small_vector::SmallVector;
 use aster;
 
+use db;
+use naming;
+
 pub fn ar(cx: &mut ExtCtxt, span: Span, args: &[ast::TokenTree]) -> Box<MacResult + 'static> {
 
     if args.len() != 1 {
@@ -23,27 +26,11 @@ pub fn ar(cx: &mut ExtCtxt, span: Span, args: &[ast::TokenTree]) -> Box<MacResul
     };
     println!("ident -> {}", ident);
 
+    let mut c = db::connect().unwrap();
+    let table = c.columns(&naming::table_name(&*ident.name.as_str())).unwrap();
+
     let builder = aster::AstBuilder::new().span(span);
-    let x = builder.item()
-                   .attr()
-                   .word("derive_Debug")
-                   .attr()
-                   .word("derive_PartialEq")
-                   .attr()
-                   .word("derive_Eq")
-                   .attr()
-                   .word("derive_Hash")
-                   .struct_(ident)
-                   .field("id")
-                   .ty()
-                   .i32()
-                   .field("name")
-                   .ty()
-                   .path()
-                   .global()
-                   .ids(&["std", "string", "String"])
-                   .build()
-                   .build();
+    let x = table.build_ast(builder, &*ident.name.as_str());
 
     println!("x -> {:?}", x);
 
