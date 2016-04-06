@@ -3,6 +3,7 @@
 extern crate aster;
 extern crate syntax;
 extern crate rustc_plugin;
+extern crate mysql;
 
 use rustc_plugin::Registry;
 
@@ -11,6 +12,7 @@ mod db;
 mod mcr;
 mod drv;
 mod naming;
+pub mod query;
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {

@@ -2,12 +2,14 @@ extern crate mysql as m;
 
 use std::env;
 use syntax::ptr::P;
-use syntax::ast::{Item, StructField};
+use syntax::ast::{Ident, Item, StructField};
 use aster;
 
 use self::m::{Pool, PooledConn, Opts};
 use self::m::from_value;
 use self::m::error::Error;
+
+use naming;
 
 pub struct Connection {
     pub connection: PooledConn,
@@ -21,27 +23,28 @@ pub fn connect() -> Result<Connection, Error> {
     Ok(Connection { connection: try!(pool.get_conn()) })
 }
 
-fn quote_column_name(name: &str) -> String {
+pub fn quote_column_name(name: &str) -> String {
     format!("`{}`", name.replace("`", "``"))
 }
 
-fn quote_table_name(name: &str) -> String {
+pub fn quote_table_name(name: &str) -> String {
     quote_column_name(name).replace(".", "`.`")
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Table {
-    name: String,
-    columns: Vec<Column>,
+pub struct TableInfo {
+    pub ident: Ident,
+    pub name: String,
+    pub columns: Vec<Column>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Column {
-    field_name: String,
-    field_type: String,
+    pub field_name: String,
+    pub field_type: String,
 }
 
-impl Table {
+impl TableInfo {
     pub fn build_ast(&self, builder: aster::AstBuilder, struct_name: &str) -> P<Item> {
 
         let builder = builder.item()
@@ -82,7 +85,8 @@ impl Table {
 }
 
 impl Connection {
-    pub fn columns(&mut self, table_name: &str) -> Result<Table, Error> {
+    pub fn table_info(&mut self, ident: &Ident) -> Result<TableInfo, Error> {
+        let table_name = &naming::table_name(&*ident.name.as_str());
         let query = format!("SHOW FULL FIELDS FROM {}", quote_table_name(table_name));
         let query_result = try!(self.connection
                                     .prep_exec(query, ()));
@@ -100,7 +104,8 @@ impl Connection {
                               })
                               .collect();
         // println!("vec<row> -> {:?}", vec);
-        Ok(Table {
+        Ok(TableInfo {
+            ident: ident.clone(),
             name: table_name.to_string(),
             columns: vec,
         })

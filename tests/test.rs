@@ -1,6 +1,11 @@
 #![feature(custom_derive, plugin)]
 #![plugin(ar)]
 
+extern crate mysql;
+extern crate ar;
+
+use ar::query::Query;
+use mysql::Row;
 
 #[derive(Ar, Debug)]
 struct Foo {
@@ -10,6 +15,7 @@ struct Foo {
 
 
 ar!{ Region }
+ar!{ Prefecture }
 
 #[test]
 fn main() {
@@ -31,4 +37,8 @@ fn main() {
         prefecture_id: 1,
     };
     println!("region -> {:?}", region);
+
+    let region = Region::first().unwrap().unwrap();
+    assert_eq!(region.id, 1);
+    assert_eq!(region.name, "北海道･東北");
 }

@@ -39,7 +39,7 @@ pub fn ar(cx: &mut ExtCtxt,
 
     let impl_item = match make_item(cx, &builder, item) {
         Ok(item) => item,
-        Err(Error) => return,
+        Err(_) => return,
     };
     push(Annotatable::Item(impl_item));
 

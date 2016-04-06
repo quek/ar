@@ -1,4 +1,5 @@
 use syntax::ast;
+use syntax::ptr::P;
 use syntax::codemap::Span;
 use syntax::ext::base::{ExtCtxt, MacResult, DummyResult, MacEager};
 use syntax::parse::token;
@@ -6,6 +7,7 @@ use syntax::util::small_vector::SmallVector;
 use aster;
 
 use db;
+use db::TableInfo;
 use naming;
 
 pub fn ar(cx: &mut ExtCtxt, span: Span, args: &[ast::TokenTree]) -> Box<MacResult + 'static> {
@@ -26,13 +28,36 @@ pub fn ar(cx: &mut ExtCtxt, span: Span, args: &[ast::TokenTree]) -> Box<MacResul
     };
     println!("ident -> {}", ident);
 
+    let mut vec = SmallVector::zero();
+
     let mut c = db::connect().unwrap();
-    let table = c.columns(&naming::table_name(&*ident.name.as_str())).unwrap();
+    let table_info = c.table_info(&ident).unwrap();
 
     let builder = aster::AstBuilder::new().span(span);
-    let x = table.build_ast(builder, &*ident.name.as_str());
+    let x = table_info.build_ast(builder, &*ident.name.as_str());
+    // println!("x -> {:?}", x);
+    vec.push(x);
 
-    println!("x -> {:?}", x);
+    let x = impl_query(cx, &table_info);
+    vec.push(x);
+    MacEager::items(vec)
+}
 
-    MacEager::items(SmallVector::many(vec![x]))
+fn impl_query(cx: &mut ExtCtxt, table_info: &TableInfo) -> P<ast::Item> {
+    let ident = table_info.ident;
+    let table_name = naming::table_name(&*ident.name.as_str());
+    let from_row_body = ();
+    quote_item!(cx,
+                impl Query for $ident {
+                    type Item = $ident;
+
+                    fn table_name() -> &'static str {
+                        $table_name
+                    }
+
+                    fn from_row(row: Row) -> Self::Item {
+                        $from_row_body
+                    }
+                })
+        .unwrap()
 }
