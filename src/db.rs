@@ -2,7 +2,9 @@ extern crate mysql as m;
 
 use std::env;
 use syntax::ptr::P;
-use syntax::ast::{Ident, Item, StructField};
+use syntax::ast::{Expr, Ident, Item, StructField};
+use syntax::codemap::Span;
+use syntax::ext::base::ExtCtxt;
 use aster;
 
 use self::m::{Pool, PooledConn, Opts};
@@ -38,14 +40,8 @@ pub struct TableInfo {
     pub columns: Vec<Column>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Column {
-    pub field_name: String,
-    pub field_type: String,
-}
-
 impl TableInfo {
-    pub fn build_ast(&self, builder: aster::AstBuilder, struct_name: &str) -> P<Item> {
+    pub fn build_struct(&self, builder: aster::AstBuilder, struct_name: &str) -> P<Item> {
 
         let builder = builder.item()
                              .attr()
@@ -82,6 +78,33 @@ impl TableInfo {
 
         builder.build()
     }
+
+    pub fn build_from_row_body(&self, cx: &mut ExtCtxt, span: &Span) -> P<Expr> {
+        let builder = aster::AstBuilder::new().span(*span);
+        builder.expr().build(quote_expr!(cx,
+                                         Region {
+                                             id: 1,
+                                             name: "あ".to_string(),
+                                             reading: "い".to_string(),
+                                             roman: "う".to_string(),
+                                             prefecture_id: 13,
+                                         }))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Column {
+    pub field_name: String,
+    pub field_type: String,
+}
+
+impl Column {
+    pub fn new(field_name: String, field_type: String) -> Column {
+        Column {
+            field_name: field_name,
+            field_type: field_type,
+        }
+    }
 }
 
 impl Connection {
@@ -91,23 +114,20 @@ impl Connection {
         let query_result = try!(self.connection
                                     .prep_exec(query, ()));
         let idxs = query_result.column_indexes();
-        let vec = query_result.map(|row| row.unwrap())
-                              .map(|mut row| {
-                                  let v = row.take(idxs["Field"]).unwrap();
-                                  let nm = from_value::<String>(v);
-                                  let v = row.take(idxs["Type"]).unwrap();
-                                  let ty = from_value::<String>(v);
-                                  Column {
-                                      field_name: nm,
-                                      field_type: ty,
-                                  }
-                              })
-                              .collect();
-        // println!("vec<row> -> {:?}", vec);
+        let columns = query_result.map(|row| row.unwrap())
+                                  .map(|mut row| {
+                                      let v = row.take(idxs["Field"]).unwrap();
+                                      let nm = from_value::<String>(v);
+                                      let v = row.take(idxs["Type"]).unwrap();
+                                      let ty = from_value::<String>(v);
+                                      Column::new(nm, ty)
+                                  })
+                                  .collect();
+        // println!("vec<row> -> {:?}", columns);
         Ok(TableInfo {
             ident: ident.clone(),
             name: table_name.to_string(),
-            columns: vec,
+            columns: columns,
         })
     }
 }

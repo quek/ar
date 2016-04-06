@@ -34,19 +34,19 @@ pub fn ar(cx: &mut ExtCtxt, span: Span, args: &[ast::TokenTree]) -> Box<MacResul
     let table_info = c.table_info(&ident).unwrap();
 
     let builder = aster::AstBuilder::new().span(span);
-    let x = table_info.build_ast(builder, &*ident.name.as_str());
+    let x = table_info.build_struct(builder, &*ident.name.as_str());
     // println!("x -> {:?}", x);
     vec.push(x);
 
-    let x = impl_query(cx, &table_info);
+    let x = impl_query(cx, &span, &table_info);
     vec.push(x);
     MacEager::items(vec)
 }
 
-fn impl_query(cx: &mut ExtCtxt, table_info: &TableInfo) -> P<ast::Item> {
+fn impl_query(cx: &mut ExtCtxt, span: &Span, table_info: &TableInfo) -> P<ast::Item> {
     let ident = table_info.ident;
     let table_name = naming::table_name(&*ident.name.as_str());
-    let from_row_body = ();
+    let from_row_body = table_info.build_from_row_body(cx, span);
     quote_item!(cx,
                 impl Query for $ident {
                     type Item = $ident;
